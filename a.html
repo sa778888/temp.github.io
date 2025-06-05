@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Architecture Visualization</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      }
+
+      .title {
+        text-align: center;
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 30px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .architecture {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+        width: 100%;
+      }
+
+      .layer {
+        border: 2px solid #e0e0e0;
+        border-radius: 15px;
+        padding: 20px;
+        position: relative;
+        transition: all 0.3s ease;
+      }
+
+      .layer:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+
+      .layer-title {
+        font-size: 1.3em;
+        font-weight: bold;
+        margin-bottom: 15px;
+        text-align: center;
+        padding: 10px;
+        border-radius: 10px;
+        color: white;
+      }
+
+      .client-layer {
+        background: linear-gradient(135deg, #cce5ff, #e6f3ff);
+        border-color: #66a3ff;
+      }
+
+      .client-layer .layer-title {
+        background: linear-gradient(135deg, #66a3ff, #3399ff);
+      }
+
+      .docker-layer {
+        background: linear-gradient(135deg, #e6f7ff, #f0faff);
+        border-color: #99d6ff;
+      }
+
+      .docker-layer .layer-title {
+        background: linear-gradient(135deg, #99d6ff, #66ccff);
+      }
+
+      .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+      }
+
+      .service-group {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 15px;
+        margin: 10px 0;
+      }
+
+      .go-services {
+        background: linear-gradient(135deg, #ccffcc, #e6ffe6);
+        border-color: #66cc66;
+      }
+
+      .python-services {
+        background: linear-gradient(135deg, #d9ead3, #e6f7e6);
+        border-color: #b6d7a8;
+      }
+
+      .data-stores {
+        background: linear-gradient(135deg, #ffe6cc, #fff2e6);
+        border-color: #ffcc99;
+      }
+
+      .file-system {
+        background: linear-gradient(135deg, #f3e5f5, #f9f2fa);
+        border-color: #ce93d8;
+      }
+
+      .service-box {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .service-box:hover {
+        transform: scale(1.02);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .service-name {
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #2c3e50;
+        margin-bottom: 8px;
+      }
+
+      .service-tech {
+        font-style: italic;
+        color: #7f8c8d;
+        font-size: 0.9em;
+        margin-bottom: 8px;
+      }
+
+      .service-port {
+        background: #3498db;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        display: inline-block;
+        margin-bottom: 8px;
+      }
+
+      .service-features {
+        font-size: 0.9em;
+        color: #34495e;
+        line-height: 1.4;
+      }
+
+      .api-gateway {
+        background: linear-gradient(135deg, #b3e0ff, #cce5ff);
+        border: 2px solid #3399ff;
+      }
+
+      .connection-line {
+        position: absolute;
+        height: 2px;
+        background: linear-gradient(90deg, #3498db, #2980b9);
+        z-index: 1;
+        opacity: 0.7;
+      }
+
+      .flow-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 10px 0;
+        font-size: 1.5em;
+        color: #3498db;
+      }
+
+      .legend {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+      }
+
+      @media (max-width: 768px) {
+        .services-grid {
+          grid-template-columns: 1fr;
+        }
+        .title {
+          font-size: 2em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="title">🏗️ System Architecture Overview</div>
+
+      <!-- Client Layer -->
+      <div class="layer client-layer">
+        <div class="layer-title">👤 User Interface Layer</div>
+        <div class="service-box">
+          <div class="service-name">Client Application</div>
+          <div class="service-tech">Web Browser / Desktop Client</div>
+          <div class="service-features">
+            • Accesses UI served by Go API Gateway or Nginx<br />
+            • Primary user interaction point
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-indicator">⬇️</div>
+
+      <!-- Docker Environment -->
+      <div class="layer docker-layer">
+        <div class="layer-title">
+          🐳 Docker Environment (Managed by Docker Compose)
+        </div>
+
+        <!-- API Gateway -->
+        <div class="service-box api-gateway">
+          <div class="service-name">🌐 API Gateway / Reverse Proxy</div>
+          <div class="service-tech">Go (Gin/Echo/Fiber) or Nginx</div>
+          <div class="service-port">Port: 8080</div>
+          <div class="service-features">
+            • Request routing to Go & Python services<br />
+            • SSL termination (if local HTTPS)<br />
+            • JWT validation (if handled here)
+          </div>
+        </div>
+
+        <div class="services-grid">
+          <!-- Go Services -->
+          <div class="service-group go-services">
+            <h3 style="margin-top: 0; color: #27ae60">
+              🚀 Go Application Services
+            </h3>
+
+            <div class="service-box">
+              <div class="service-name">👤 User & Auth Service</div>
+              <div class="service-tech">Go (Gin/Echo/Fiber) + GORM/sqlx</div>
+              <div class="service-port">Port: 5001</div>
+              <div class="service-features">
+                • User registration & login<br />
+                • Password hashing (crypto/bcrypt)<br />
+                • JWT token generation/validation<br />
+                • Profile management
+              </div>
+            </div>
+
+            <div class="service-box">
+              <div class="service-name">💬 Communication Service</div>
+              <div class="service-tech">Go (Gin/Echo/Fiber) + GORM/sqlx</div>
+              <div class="service-port">Port: 5002</div>
+              <div class="service-features">
+                • Patient-admin messaging<br />
+                • Message storage/retrieval
+              </div>
+            </div>
+
+            <div class="service-box">
+              <div class="service-name">💭 Forum Service</div>
+              <div class="service-tech">Go (Gin/Echo/Fiber) + GORM/sqlx</div>
+              <div class="service-port">Port: 5003</div>
+              <div class="service-features">
+                • Post/comment CRUD operations<br />
+                • User pseudonyms<br />
+                • Integration with moderation service
+              </div>
+            </div>
+
+            <div class="service-box">
+              <div class="service-name">🛡️ Moderation Service</div>
+              <div class="service-tech">Go (Gin/Echo/Fiber)</div>
+              <div class="service-port">Port: 5005</div>
+              <div class="service-features">
+                • Text analysis for forum content<br />
+                • Regex & keyword filtering<br />
+                • Optional external moderation API calls
+              </div>
+            </div>
+          </div>
+
+          <!-- Python AI Service -->
+          <div class="service-group python-services">
+            <h3 style="margin-top: 0; color: #27ae60">
+              🤖 AI Service - Langchain
+            </h3>
+
+            <div class="service-box">
+              <div class="service-name">🧠 Chatbot Service</div>
+              <div class="service-tech">Python (Flask/FastAPI) + Langchain</div>
+              <div class="service-port">Port: 5004</div>
+              <div class="service-features">
+                • Receives user queries from Go API Gateway<br />
+                • Langchain RAG Pipeline:<br />
+                &nbsp;&nbsp;- Text embedding (Sentence Transformer)<br />
+                &nbsp;&nbsp;- Vector DB search (Langchain integration)<br />
+                &nbsp;&nbsp;- Prompt templating<br />
+                &nbsp;&nbsp;- Local LLM interaction
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="services-grid">
+          <!-- Data Stores -->
+          <div class="service-group data-stores">
+            <h3 style="margin-top: 0; color: #f39c12">🗄️ Data Stores</h3>
+
+            <div class="service-box">
+              <div class="service-name">🐘 PostgreSQL Database</div>
+              <div class="service-tech">PostgreSQL Docker Container</div>
+              <div class="service-port">Port: 5432</div>
+              <div class="service-features">
+                • User accounts<br />
+                • Messages & forum posts<br />
+                • Application metadata
+              </div>
+            </div>
+
+            <div class="service-box">
+              <div class="service-name">🧮 Vector Database</div>
+              <div class="service-tech">
+                ChromaDB Server or FAISS/SQLite-VSS
+              </div>
+              <div class="service-port">Port: 8001 (ChromaDB)</div>
+              <div class="service-features">
+                • Text chunk embeddings for RAG<br />
+                • Accessed by Python chatbot service
+              </div>
+            </div>
+          </div>
+
+          <!-- File System -->
+          <div class="service-group file-system">
+            <h3 style="margin-top: 0; color: #9b59b6">
+              📁 Local File System (Mounted Volumes)
+            </h3>
+
+            <div class="service-box">
+              <div class="service-name">💾 PostgreSQL Data Volume</div>
+              <div class="service-tech">Host Path: ./data/postgres_data</div>
+              <div class="service-features">
+                Persistent data for PostgreSQL container
+              </div>
+            </div>
+
+            <div class="service-box">
+              <div class="service-name">🔍 Vector DB Data Volume</div>
+              <div class="service-tech">Host Path: ./data/vector_db_data</div>
+              <div class="service-features">
+                Persistent data/index for vector database
+              </div>
+            </div>
+
+            <div class="service-box">
+              <div class="service-name">📚 Knowledge Base Files</div>
+              <div class="service-tech">Host Path: ./data/knowledge_base</div>
+              <div class="service-features">
+                Text files, PDFs for RAG system
+              </div>
+            </div>
+
+            <div class="service-box">
+              <div class="service-name">🤖 LLM Model Files</div>
+              <div class="service-tech">Host Path: ./models/llm</div>
+              <div class="service-features">
+                GGUF files for local language models
+              </div>
+            </div>
+
+            <div class="service-box">
+              <div class="service-name">🔤 Embedding Model Files</div>
+              <div class="service-tech">Host Path: ./models/embedding</div>
+              <div class="service-features">
+                Sentence Transformer model files
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <div class="legend-item">
+          <div
+            class="legend-color"
+            style="background: linear-gradient(135deg, #cce5ff, #e6f3ff)"
+          ></div>
+          <span>Client Layer</span>
+        </div>
+        <div class="legend-item">
+          <div
+            class="legend-color"
+            style="background: linear-gradient(135deg, #ccffcc, #e6ffe6)"
+          ></div>
+          <span>Go Services</span>
+        </div>
+        <div class="legend-item">
+          <div
+            class="legend-color"
+            style="background: linear-gradient(135deg, #d9ead3, #e6f7e6)"
+          ></div>
+          <span>Python AI Service</span>
+        </div>
+        <div class="legend-item">
+          <div
+            class="legend-color"
+            style="background: linear-gradient(135deg, #ffe6cc, #fff2e6)"
+          ></div>
+          <span>Data Stores</span>
+        </div>
+        <div class="legend-item">
+          <div
+            class="legend-color"
+            style="background: linear-gradient(135deg, #f3e5f5, #f9f2fa)"
+          ></div>
+          <span>File System</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Add hover effects and interactions
+      document.querySelectorAll(".service-box").forEach((box) => {
+        box.addEventListener("mouseenter", function () {
+          this.style.transform = "scale(1.02) translateY(-2px)";
+          this.style.boxShadow = "0 8px 25px rgba(0,0,0,0.15)";
+        });
+
+        box.addEventListener("mouseleave", function () {
+          this.style.transform = "scale(1) translateY(0)";
+          this.style.boxShadow = "0 2px 5px rgba(0,0,0,0.1)";
+        });
+      });
+
+      // Add subtle animations on load
+      window.addEventListener("load", function () {
+        document.querySelectorAll(".layer").forEach((layer, index) => {
+          setTimeout(() => {
+            layer.style.opacity = "0";
+            layer.style.transform = "translateY(20px)";
+            layer.style.transition = "all 0.6s ease";
+
+            setTimeout(() => {
+              layer.style.opacity = "1";
+              layer.style.transform = "translateY(0)";
+            }, 100);
+          }, index * 200);
+        });
+      });
+    </script>
+  </body>
+</html>
